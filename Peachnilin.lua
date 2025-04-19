@@ -1,121 +1,120 @@
-if not game:IsLoaded() then repeat task.wait() until game:IsLoaded() end
+-- PeachNilin Hub v1.0
+-- By Peach x Nilin | รองรับมือถือ & คอม
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
--- Anti FPS Drop
-pcall(function()
-    setfpscap(90)
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    game:GetService("Lighting").GlobalShadows = false
+-- UI โหลด
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Peach-Nilin HUB", "Midnight")
+
+-- ตัวแปร
+local autofarm = false
+local fastAttack = false
+
+-- Page ฟาร์ม
+local Tab = Window:NewTab("Auto Farm")
+local Section = Tab:NewSection("Main Farm")
+
+Section:NewToggle("Auto Farm Level", "เก็บเลเวลอัตโนมัติ", function(state)
+    autofarm = state
+    while autofarm do
+        task.wait()
+        local enemy = FindNearestMob()
+        if enemy then
+            BringMob(enemy)
+            AttackMob(enemy)
+        end
+    end
 end)
 
--- UI Setup
-local gui = Instance.new("ScreenGui")
-gui.Name = "PeachNilinUI"
-gui.ResetOnSpawn = false
-gui.Parent = game:GetService("CoreGui")
-
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 400, 0, 300)
-main.Position = UDim2.new(0.5, -200, 0.5, -150)
-main.BackgroundColor3 = Color3.fromRGB(30,30,30)
-main.Active = true
-main.Draggable = true
-
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Text = "Peach-Nilin Hub"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundColor3 = Color3.fromRGB(50,50,50)
-
-local buttonsFrame = Instance.new("Frame", main)
-buttonsFrame.Size = UDim2.new(1, 0, 1, -40)
-buttonsFrame.Position = UDim2.new(0, 0, 0, 40)
-buttonsFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-
-local layout = Instance.new("UIListLayout", buttonsFrame)
-layout.Padding = UDim.new(0, 6)
-
--- Function: Create Button
-local function CreateButton(name, callback)
-    local btn = Instance.new("TextButton", buttonsFrame)
-    btn.Size = UDim2.new(1, -12, 0, 35)
-    btn.Position = UDim2.new(0, 6, 0, 0)
-    btn.Text = name
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    btn.MouseButton1Click:Connect(callback)
-end
-
--- Super Fast Attack V3
-getgenv().FastAttack = false
-function ToggleFastAttack()
-    getgenv().FastAttack = not getgenv().FastAttack
-    if getgenv().FastAttack then
-        task.spawn(function()
-            while getgenv().FastAttack do
-                pcall(function()
-                    local plr = game.Players.LocalPlayer
-                    local cf = require(plr.PlayerScripts.CombatFramework)
-                    local rig = cf.activeController
-                    if rig and rig.equipped then
-                        rig.timeToNextAttack = 0.1
-                        rig.attacking = false
-                        rig.blocking = false
-                        rig.hitboxMagnitude = 100
-                        rig:attack()
-                    end
-                end)
-                task.wait(0.07)
-            end
+Section:NewToggle("Fast Attack", "ตีไวมากๆ", function(state)
+    fastAttack = state
+    if fastAttack then
+        RunService.Stepped:Connect(function()
+            pcall(function()
+                local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                if tool then
+                    tool:Activate()
+                end
+            end)
         end)
     end
-end
+end)
 
--- Auto Farm (ตัวอย่าง)
-getgenv().AutoFarm = false
-function ToggleAutoFarm()
-    getgenv().AutoFarm = not getgenv().AutoFarm
-    if getgenv().AutoFarm then
-        task.spawn(function()
-            while getgenv().AutoFarm do
-                pcall(function()
-                    -- ใส่ฟังก์ชันฟาร์มตรงนี้
-                    warn("กำลังฟาร์มเลเวล...")
-                end)
-                task.wait(0.5)
-            end
-        end)
+-- Page มาสเตอร์รี่
+local Tab2 = Window:NewTab("Mastery")
+local Section2 = Tab2:NewSection("Mastery Auto")
+
+Section2:NewToggle("Auto Mastery All", "เก็บ Mastery ดาบ/ปืน/ผล", function(state)
+    if state then
+        autofarm = true
+    else
+        autofarm = false
     end
+end)
+
+-- Page อีเวนต์
+local Tab3 = Window:NewTab("Events")
+local Section3 = Tab3:NewSection("Auto Events")
+
+Section3:NewButton("Auto Bones", "เก็บ Bones จากมอน", function()
+    print("เก็บ Bones ทำงาน")
+    -- ใส่โค้ดฟาร์ม Bones
+end)
+
+Section3:NewButton("Auto Cake", "ฟาร์มเค้ก", function()
+    print("ฟาร์มเค้กทำงาน")
+    -- ใส่โค้ดฟาร์มเค้ก
+end)
+
+Section3:NewButton("Auto Sea Event", "ทะเลแตก", function()
+    print("Sea Event เริ่ม!")
+    -- ใส่โค้ด Sea Event
+end)
+
+Section3:NewButton("Auto Raid", "ลงดันเจี้ยน", function()
+    print("ลงดัน")
+    -- ใส่โค้ดลง Raid
+end)
+
+-- ฟังก์ชันดึงมอนมาใกล้ตัว
+function BringMob(mob)
+    pcall(function()
+        if mob and mob:FindFirstChild("HumanoidRootPart") then
+            local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
+            local goal = {CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(3, 0, -3)}
+            local tween = TweenService:Create(mob.HumanoidRootPart, tweenInfo, goal)
+            tween:Play()
+        end
+    end)
 end
 
--- Auto Mastery (ตัวอย่าง)
-getgenv().AutoMastery = false
-function ToggleAutoMastery()
-    getgenv().AutoMastery = not getgenv().AutoMastery
-    if getgenv().AutoMastery then
-        task.spawn(function()
-            while getgenv().AutoMastery do
-                pcall(function()
-                    -- ใส่การโจมตีมอนเพื่อเก็บ Mastery
-                    warn("เก็บ Mastery...")
-                end)
-                task.wait(0.4)
+-- ฟังก์ชันหามอนใกล้สุด
+function FindNearestMob()
+    local closest, dist = nil, math.huge
+    for _, v in pairs(workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+            local magnitude = (LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
+            if magnitude < dist then
+                dist = magnitude
+                closest = v
             end
-        end)
+        end
     end
+    return closest
 end
 
--- Add Buttons
-CreateButton("Auto Farm Level", ToggleAutoFarm)
-CreateButton("Auto Mastery", ToggleAutoMastery)
-CreateButton("Super Fast Attack (V3)", ToggleFastAttack)
-
--- Notify
-game.StarterGui:SetCore("SendNotification", {
-    Title = "Peach-Nilin Hub",
-    Text = "โหลดสำเร็จแล้วค่า~~",
-    Duration = 5
-})
+-- ฟังก์ชันตีมอน
+function AttackMob(mob)
+    pcall(function()
+        repeat
+            task.wait(0.1)
+            if LocalPlayer.Character:FindFirstChildOfClass("Tool") then
+                LocalPlayer.Character:FindFirstChildOfClass("Tool"):Activate()
+            end
+        until mob.Humanoid.Health <= 0 or not autofarm
+    end)
+end
