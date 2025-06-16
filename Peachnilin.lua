@@ -1,120 +1,83 @@
--- PeachNilin Hub v1.0
--- By Peach x Nilin | รองรับมือถือ & คอม
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlantSeedEvent = ReplicatedStorage.GrowGardenEvents.PlantSeed
+local HarvestEvent = ReplicatedStorage.GrowGardenEvents.Harvest
 
--- UI โหลด
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Peach-Nilin HUB", "Midnight")
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
 
--- ตัวแปร
-local autofarm = false
-local fastAttack = false
+local playerGui = player:WaitForChild("PlayerGui")
+local screenGui = playerGui:WaitForChild("ScreenGui") -- ชื่อ ScreenGui ที่สร้างไว้
+local moneyLabel = screenGui:WaitForChild("MoneyLabel")
+local actionButton = screenGui:WaitForChild("ActionButton")
 
--- Page ฟาร์ม
-local Tab = Window:NewTab("Auto Farm")
-local Section = Tab:NewSection("Main Farm")
+local targetPlot = nil
 
-Section:NewToggle("Auto Farm Level", "เก็บเลเวลอัตโนมัติ", function(state)
-    autofarm = state
-    while autofarm do
-        task.wait()
-        local enemy = FindNearestMob()
-        if enemy then
-            BringMob(enemy)
-            AttackMob(enemy)
+-- อัพเดตเงินบน UI
+local function updateMoney()
+    local money = player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Money")
+    if money then
+        moneyLabel.Text = "เงิน: " .. money.Value
+    end
+end
+
+player.leaderstats.Money.Changed:Connect(updateMoney)
+updateMoney()
+
+local function getTreeNearPlot(plot)
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name == "Tree" and (obj.Position - plot.Position).magnitude < 5 then
+            return obj
         end
     end
-end)
+    return nil
+end
 
-Section:NewToggle("Fast Attack", "ตีไวมากๆ", function(state)
-    fastAttack = state
-    if fastAttack then
-        RunService.Stepped:Connect(function()
-            pcall(function()
-                local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if tool then
-                    tool:Activate()
-                end
-            end)
-        end)
+local function updateButton()
+    if not targetPlot then
+        actionButton.Text = "เลือกแปลงปลูก"
+        actionButton.Enabled = false
+        return
     end
-end)
 
--- Page มาสเตอร์รี่
-local Tab2 = Window:NewTab("Mastery")
-local Section2 = Tab2:NewSection("Mastery Auto")
-
-Section2:NewToggle("Auto Mastery All", "เก็บ Mastery ดาบ/ปืน/ผล", function(state)
-    if state then
-        autofarm = true
+    local tree = getTreeNearPlot(targetPlot)
+    if tree then
+        if tree.Size.Y >= 6 then
+            actionButton.Text = "เก็บผลผลิต"
+            actionButton.Enabled = true
+        else
+            actionButton.Text = "รอให้โต"
+            actionButton.Enabled = false
+        end
     else
-        autofarm = false
+        actionButton.Text = "ปลูกต้นไม้"
+        actionButton.Enabled = true
+    end
+end
+
+mouse.Button1Down:Connect(function()
+    local target = mouse.Target
+    if target and target.Parent and target.Parent.Name == "Plots" then
+        targetPlot = target.Parent:FindFirstChild(target.Name) or target
+        updateButton()
     end
 end)
 
--- Page อีเวนต์
-local Tab3 = Window:NewTab("Events")
-local Section3 = Tab3:NewSection("Auto Events")
-
-Section3:NewButton("Auto Bones", "เก็บ Bones จากมอน", function()
-    print("เก็บ Bones ทำงาน")
-    -- ใส่โค้ดฟาร์ม Bones
-end)
-
-Section3:NewButton("Auto Cake", "ฟาร์มเค้ก", function()
-    print("ฟาร์มเค้กทำงาน")
-    -- ใส่โค้ดฟาร์มเค้ก
-end)
-
-Section3:NewButton("Auto Sea Event", "ทะเลแตก", function()
-    print("Sea Event เริ่ม!")
-    -- ใส่โค้ด Sea Event
-end)
-
-Section3:NewButton("Auto Raid", "ลงดันเจี้ยน", function()
-    print("ลงดัน")
-    -- ใส่โค้ดลง Raid
-end)
-
--- ฟังก์ชันดึงมอนมาใกล้ตัว
-function BringMob(mob)
-    pcall(function()
-        if mob and mob:FindFirstChild("HumanoidRootPart") then
-            local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
-            local goal = {CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(3, 0, -3)}
-            local tween = TweenService:Create(mob.HumanoidRootPart, tweenInfo, goal)
-            tween:Play()
-        end
-    end)
-end
-
--- ฟังก์ชันหามอนใกล้สุด
-function FindNearestMob()
-    local closest, dist = nil, math.huge
-    for _, v in pairs(workspace.Enemies:GetChildren()) do
-        if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-            local magnitude = (LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
-            if magnitude < dist then
-                dist = magnitude
-                closest = v
-            end
-        end
+actionButton.MouseButton1Click:Connect(function()
+    if not targetPlot then return end
+    local tree = getTreeNearPlot(targetPlot)
+    if tree and tree.Size.Y >= 6 then
+        HarvestEvent:FireServer(targetPlot.Name)
+    else
+        PlantSeedEvent:FireServer(targetPlot.Name)
     end
-    return closest
-end
+end)
 
--- ฟังก์ชันตีมอน
-function AttackMob(mob)
-    pcall(function()
-        repeat
-            task.wait(0.1)
-            if LocalPlayer.Character:FindFirstChildOfClass("Tool") then
-                LocalPlayer.Character:FindFirstChildOfClass("Tool"):Activate()
-            end
-        until mob.Humanoid.Health <= 0 or not autofarm
-    end)
-end
+HarvestEvent.OnClientEvent:Connect(function(plotId, success)
+    if success then
+        print("เก็บผลผลิตสำเร็จที่ " .. plotId)
+        updateMoney()
+        updateButton()
+    else
+        print("เก็บผลผลิตไม่สำเร็จ")
+    end
+end)
