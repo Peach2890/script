@@ -44,11 +44,11 @@ local e = false
 local Window = Rayfield:CreateWindow({
 	Name = "▶ Gun Grounds FFA ◀",
 	LoadingTitle = "Loading...",
-	LoadingSubtitle = "by Agreed 🥵",
+	LoadingSubtitle = "by คนพิการประจำกลุ่ม 🥵",
 	ConfigurationSaving = {
 		Enabled = true,
 		FolderName = "GunGroundsFFA",
-		FileName = "byAgreed"
+		FileName = "by คนพิการประจำกลุ่ม"
 	},
 })
 
