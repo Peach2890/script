@@ -1,11 +1,11 @@
--- Rayfield
+-- โหลด Rayfield
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Window Main
+-- Window หลัก
 local Window = Rayfield:CreateWindow({
-   Name = "Maru Hub",
-   LoadingTitle = "Maru Hub",
-   LoadingSubtitle = "3 Tabs Example",
+   Name = "Diamond Hub",
+   LoadingTitle = "Diamond Hub",
+   LoadingSubtitle = "By: นายเพชรสะเก็ดขี้💩",
    KeySystem = false
 })
 
@@ -15,25 +15,26 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 local MainSec = MainTab:CreateSection("Main Features")
 
--- Hitbox Player (Toggle)
+-- Hitbox Player (เฉพาะหัว สีใส ดาเมจเข้า)
 MainTab:CreateToggle({
-   Name = "Hitbox Player",
+   Name = "Hitbox Head",
    CurrentValue = false,
-   Flag = "HitboxToggle",
+   Flag = "HitboxHead",
    Callback = function(Value)
       for _, v in pairs(game:GetService("Players"):GetPlayers()) do
          if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+            local head = v.Character.Head
             if Value then
-               v.Character.Head.Size = Vector3.new(7, 7, 7)
-               v.Character.Head.Transparency = 0.7
-               v.Character.Head.Material = Enum.Material.Neon
-               v.Character.Head.BrickColor = BrickColor.new("Bright red")
-               v.Character.Head.CanCollide = false
+               head.Size = Vector3.new(30,30,30)
+               head.Transparency = 0.5
+               head.Material = Enum.Material.SmoothPlastic
+               head.BrickColor = BrickColor.new("Really black")
+               head.CanCollide = false
             else
-               v.Character.Head.Size = Vector3.new(2, 1, 1) -- รีเซ็ตกลับ
-               v.Character.Head.Transparency = 0
-               v.Character.Head.Material = Enum.Material.Plastic
-               v.Character.Head.BrickColor = BrickColor.new("Medium stone grey")
+               head.Size = Vector3.new(2,1,1) -- ขนาดเดิมของหัว
+               head.Transparency = 0
+               head.Material = Enum.Material.Plastic
+               head.BrickColor = BrickColor.new("Medium stone grey")
             end
          end
       end
@@ -75,7 +76,7 @@ local PlayerSec = PlayerTab:CreateSection("Player Mods")
 -- WalkSpeed
 PlayerTab:CreateSlider({
    Name = "WalkSpeed",
-   Range = {16, 200},
+   Range = {16, 350},
    Increment = 1,
    Suffix = " Speed",
    CurrentValue = 16,
@@ -88,7 +89,7 @@ PlayerTab:CreateSlider({
 -- JumpBoost
 PlayerTab:CreateSlider({
    Name = "JumpBoost",
-   Range = {50, 300},
+   Range = {50, 3000},
    Increment = 10,
    Suffix = " Power",
    CurrentValue = 50,
@@ -127,24 +128,55 @@ PlayerTab:CreateToggle({
    Flag = "Fly",
    Callback = function(Value)
       local plr = game.Players.LocalPlayer
+      local HRP = plr.Character:WaitForChild("HumanoidRootPart")
+
       if Value then
          getgenv().Flying = true
-         local HRP = plr.Character:WaitForChild("HumanoidRootPart")
-         local bv = Instance.new("BodyVelocity")
-         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+         -- BodyGyro = คุมการหมุน, BodyVelocity = คุมการเคลื่อนที่
+         local bg = Instance.new("BodyGyro", HRP)
+         bg.P = 9e4
+         bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+         bg.CFrame = HRP.CFrame
+
+         local bv = Instance.new("BodyVelocity", HRP)
          bv.Velocity = Vector3.zero
-         bv.Parent = HRP
+         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
          flyConn = game:GetService("RunService").Heartbeat:Connect(function()
             if getgenv().Flying then
-               bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 50
+               local camCF = workspace.CurrentCamera.CFrame
+               local moveDir = Vector3.zero
+
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                  moveDir = moveDir + camCF.LookVector
+               end
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                  moveDir = moveDir - camCF.LookVector
+               end
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                  moveDir = moveDir - camCF.RightVector
+               end
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                  moveDir = moveDir + camCF.RightVector
+               end
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                  moveDir = moveDir + Vector3.new(0,1,0)
+               end
+               if game.UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                  moveDir = moveDir - Vector3.new(0,1,0)
+               end
+
+               bv.Velocity = moveDir * 70 -- ความเร็วปรับได้ (70 = เร็ว)
+               bg.CFrame = camCF
             end
          end)
+
       else
          getgenv().Flying = false
          if flyConn then flyConn:Disconnect() end
-         if plr.Character:FindFirstChild("HumanoidRootPart"):FindFirstChildOfClass("BodyVelocity") then
-            plr.Character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity"):Destroy()
-         end
+         if HRP:FindFirstChildOfClass("BodyGyro") then HRP:FindFirstChildOfClass("BodyGyro"):Destroy() end
+         if HRP:FindFirstChildOfClass("BodyVelocity") then HRP:FindFirstChildOfClass("BodyVelocity"):Destroy() end
       end
    end,
 })
